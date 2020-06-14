@@ -1,0 +1,47 @@
+:root{
+    --unit: 1px;
+    --value-size: 30;
+    --field-side: 20;
+    --cell-size: calc(var(--unit) * var(--value-size));
+    --field-width: calc(var(--field-side) * var(--cell-size))
+}
+
+/** {*/
+/*    box-sizing: border-box;*/
+/*}*/
+
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: white
+}
+
+
+.game {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 auto;
+    width: var(--field-width);
+    height: var(--field-width);
+    border: 1px solid white;
+}
+
+.game div {
+    width: var(--cell-size);
+    height: var(--cell-size);
+}
+
+.enemy {
+    background: red;
+    border-radius: 50%;
+}
+
+.player {
+    background: forestgreen;
+    border-radius: 50% 50% 50% 50% / 100% 100% 0 0;
+}
+
+.bullet {
+    background: linear-gradient(90deg, black 45%, white 50%, black 55% );
+}
