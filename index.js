@@ -83,7 +83,7 @@ const moveEnemies = (direction) => {
     moveDefender();
     moveBlock(direction);
     if(enemies.enemyIdx[enemies.enemyIdx.length-1] >= lastLine){
-        stopTheGame()
+        stopTheGame1()
     }
     if(stuckLeft()) {
         direction = direction === gameWidth ? 1 : gameWidth
@@ -130,7 +130,7 @@ const handleKey = event => {
         doShoot(player.index)
     }
     if(gameStarted && event.code === "Escape"){
-        stopTheGame(0)
+        stopTheGame1(0)
     }
     if(!gameStarted && event.code === "Enter"){
         gameStarted = true;
@@ -162,7 +162,7 @@ const doShoot = (shooter, direction= 1, target = {enemies, targetClassName:["ene
         if(!target || !gameStarted) return;
         if (target.isPlayer){
             if(target.index === bulletIndex){
-                stopTheGame(-1)
+                stopTheGame1(-1)
             }
         }else if (Array.isArray(target.enemies.enemyIdx)) {
 
@@ -170,7 +170,7 @@ const doShoot = (shooter, direction= 1, target = {enemies, targetClassName:["ene
                 target.enemies.deleteItem(bulletIndex)
                 divs[bulletIndex].classList.remove(...target.targetClassName, "bullet")
                 if(!target.enemies.enemyIdx.length) {
-                    stopTheGame(1)
+                    stopTheGame1(1)
                 }
                 return
             }
@@ -188,7 +188,7 @@ const doShoot = (shooter, direction= 1, target = {enemies, targetClassName:["ene
     flyBullet(direction, target)
 }
 
-const stopTheGame = (result) =>{
+const stopTheGame1 = (result) =>{
     winLose = result;
     gameStarted = false;
     showMessage(true)
