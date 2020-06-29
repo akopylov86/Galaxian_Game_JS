@@ -14,7 +14,7 @@ const imgPlayer = new Image()
 const imgDefender = new Image()
     imgDefender.src = "./img/defender.png"
 
-let gameID = null;
+let gameID = {interval:[], animationRequest:[]};
 let gameStarted = false;
 let canShoot = true;
 const shootingTimeout = 300;
@@ -25,6 +25,7 @@ const enemyAmountInLine = 8;
 let enemyPack = null;
 let player = null;
 let defender = null;
+let bulletPack = [];
 
 class Enemy {
     constructor(indexX, indexY, extraX=0, extraY=0) {
@@ -38,12 +39,6 @@ class Enemy {
         this.stuckRight = false;
     }
     draw = () => {
-
-        // ctx.beginPath()
-        // ctx.arc(this.x, this.y, this.radius, 0, PI*2,true)
-        // ctx.closePath();
-        // ctx.fillStyle = this.color;
-        // ctx.fill()
         ctx.drawImage(imgEnemy, this.x-this.radius, this.y-this.radius,this.radius*2, this.radius*2)
     }
 
@@ -96,7 +91,7 @@ class Defender {
         this.bulletColor = "orange";
         this.opponent = player;
         this.direction = -1;
-        this.shootDelay = 4; //shoot every N moves
+        this.shootDelay = 4; //shoot every N moves //4
         this.movesBeforeShot = this.shootDelay;
         this.hasShootTimeout = false;
         this.shootSpeed = speedElement.value-2;
@@ -106,8 +101,6 @@ class Defender {
             const new_position = this.x + this.radius * this.direction
             ctx.clearRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2)
             this.x = new_position;
-
-            this.draw();
         }
         if(this.x > this.opponent.x)
             this.direction = -1;
@@ -125,11 +118,6 @@ class Defender {
     }
 
     draw(){
-        // ctx.beginPath()
-        // ctx.arc(this.x, this.y, this.radius, 0, PI*2,true)
-        // ctx.closePath();
-        // ctx.fillStyle = this.color;
-        // ctx.fill()
         ctx.drawImage(imgDefender, this.x-this.radius, this.y-this.radius,this.radius*2, this.radius*2)
     }
 
@@ -149,25 +137,19 @@ class Player {
         this.opponent = enemyPack;
         this.hasShootTimeout = true;
         this.shootSpeed = 20;
+        this.direction = 0;
     }
 
-    move(direction){
-        const new_position =  this.x + this.radius * direction
+    move(){
+        const new_position =  this.x + (this.radius) * this.direction
         if(new_position < this.radius/2 || new_position >= fieldW-this.radius/2)
             return
 
         ctx.clearRect(this.x - this.radius,this.y - this.radius, this.radius*2, this.radius*2)
         this.x = new_position;
-
-        this.draw()
     }
 
     draw(){
-        // ctx.beginPath()
-        // ctx.arc(this.x, this.y, this.radius, 0, PI*2,true)
-        // ctx.closePath();
-        // ctx.fillStyle = this.color;
-        // ctx.fill()
         ctx.drawImage(imgPlayer, this.x-this.radius, this.y-this.radius,this.radius*2, this.radius*2)
     }
 
@@ -194,6 +176,7 @@ class Bullet {
         this.color = shooter.bulletColor;
         this.shootIntervalId = null;
         this.shootSpeed = 30 - shooter.shootSpeed;
+
     }
 
     move(){
@@ -201,13 +184,12 @@ class Bullet {
             this.stopTheBullet()
             return;
         }
-        ctx.clearRect(this.x - this.radius,this.y - this.radius, this.radius*2, this.radius*2)
-        if(this.y<0 || this.y>fieldW){
+        if(this.y<=0 || this.y>=fieldW){
             this.stopTheBullet();
             return
         }
         this.y += this.direction * this.radius;
-        this.draw()
+        // this.draw()
         if(this.shooter.opponent.checkHitted(this.x, this.y)){
             this.stopTheBullet()
         }
@@ -225,10 +207,9 @@ class Bullet {
 
     shoot(){
         if (this.shooter.hasShootTimeout && canShoot || !this.shooter.hasShootTimeout) {
-            console.log(this.shooter, "shoots with speed", this.shootSpeed)
+            bulletPack.push(this);
             this.shootIntervalId = setInterval(
                 ()=>{
-                    this.draw();
                     this.move()
                 }
             , this.shootSpeed)
@@ -245,6 +226,11 @@ class Bullet {
     stopTheBullet(){
         clearInterval(this.shootIntervalId);
         ctx.clearRect(this.x - this.radius,this.y - this.radius, this.radius*2, this.radius*2)
+        this.deleteFromBulletArr(this)
+    }
+
+    deleteFromBulletArr(){
+        bulletPack = bulletPack.filter(bullet => bullet !== this)
     }
 }
 
@@ -271,6 +257,10 @@ class EnemyPack {
         }
         this.enemies.forEach((enemy)=>enemy.move())
         this.findSidesOfPack();
+    }
+
+    draw(){
+        this.enemies.forEach((enemy)=>enemy.draw())
     }
 
     changeDirectionPack(){
@@ -306,6 +296,7 @@ class EnemyPack {
         }
         return (enemyKilled)
     }
+
     amount() {
         return this.enemies.length;
     }
@@ -319,15 +310,33 @@ initGame = () => {
     player = new Player();
     defender = new Defender();
     gameStarted = true;
-    player.draw();
-    gameID = setInterval(()=>{
-            enemyPack.movePack()
-            defender.move()
-    },enemySpeed)
+    bulletPack = [];
+
+    gameID.interval.push(setInterval(()=>{
+        enemyPack.movePack()
+        defender.move()
+    },enemySpeed))
+
+    gameID.interval.push(setInterval(() => {
+        player.move();
+    }, 100))
+}
+
+gameLoop = () => {
+
+    if(gameStarted) {
+        clearField()
+        bulletPack.forEach(el => el.draw())
+        player.draw();
+        defender.draw();
+        enemyPack.draw();
+        window.requestAnimationFrame(gameLoop)
+    }
 }
 
 stopTheGame = (result) => {
-    clearInterval(gameID)
+    gameID.interval.forEach(element => clearInterval(element))
+    gameID.animationRequest.forEach(element => window.cancelAnimationFrame(element));
     gameStarted = false;
     ctx.font = '48px serif';
     ctx.strokeStyle = "white";
@@ -340,24 +349,41 @@ clearField = () => {
     ctx.clearRect(0, 0, fieldW, fieldW)
 }
 
-const handleKey = (event) => {
+const handleKeyDown = (event) => {
     if(gameStarted && event.code === "ArrowLeft"){
-        player.move(-1)
+        player.direction = -1;
     }
     if(gameStarted && event.code === "ArrowRight"){
-        player.move(1)
+        player.direction = 1;
     }
     if(gameStarted && event.code === "Space"){
         const bullet = new Bullet(player, -1)
         bullet.shoot();
     }
     if(!gameStarted && event.code === "Enter"){
-        initGame()
+        initGame();
+        gameLoop();
     }
     if(gameStarted && event.code === "Escape"){
         stopTheGame(-1)
     }
 }
 
-addEventListener('keydown', handleKey)
+const handleKeyUp = (event) => {
+    if(gameStarted && event.code === "ArrowLeft"){
+        player.direction = 0;
+    }
+    if(gameStarted && event.code === "ArrowRight"){
+        player.direction = 0;
+    }
+    if(gameStarted && event.code === "Space"){
+        // const bullet = new Bullet(player, -1)
+        // bullet.shoot();
+    }
 
+}
+
+addEventListener('keydown', handleKeyDown)
+addEventListener('keyup', handleKeyUp)
+
+gameID.animationRequest.push(window.requestAnimationFrame(gameLoop));
