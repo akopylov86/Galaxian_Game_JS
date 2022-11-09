@@ -4,3 +4,6 @@ simple arcade game.
 
 
 https://silly-panini-843048.netlify.app/
+
+
+Remade on Canvas element
